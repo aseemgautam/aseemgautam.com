@@ -20,6 +20,7 @@ export default function Nextra({ Component, pageProps }) {
           type="font/woff2"
           crossOrigin="anonymous"
         />
+				<title>Aseem Gautam</title>
       </Head>
       <Component {...pageProps} />
     </>
