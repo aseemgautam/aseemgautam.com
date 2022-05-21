@@ -17,12 +17,35 @@ Here's some of the products I have build over a decade.
 
 import Image from 'next/image'
 
-[Covid Tracking India ↗ ](https://covidtracking.in)
+## 01 [Covid Tracking India ↗](https://covidtracking.in).
+NextJS, ReactJS, Ant Design, Ant Design Charts.
 <Image
-  src="/images/project-covid-tracking.png"
+  src="/images/project-covid-tracking-dashboard.png"
   alt="Photo"
-  width={1125}
-  height={1009}
+  width={2409}
+  height={1071}
+  priority
+  className="next-image"
+/>
+
+Analytics
+
+<Image
+  src="/images/project-covid-tracking-table.png"
+  alt="Photo"
+  width={2726}
+  height={1588}
+  priority
+  className="next-image"
+/>
+
+Some more analytics
+
+<Image
+  src="/images/project-covid-tracking-datawrapper.jpeg"
+  alt="Photo"
+  width={2560}
+  height={2244}
   priority
   className="next-image"
 />
@@ -37,3 +60,32 @@ Mobile
   priority
   className="next-image"
 />
+
+## 02 Bitcoin Mining
+
+Bitcoin miner windows application that can mine with CPU, GPU & Block Erupter. 
+
+<Image
+  src="/images/project-bitcoin-mining.jpg"
+  alt="Photo"
+  width={980}
+  height={570}
+  priority
+  className="next-image"
+/>
+
+One of the key challanges was to optimize performance using a **midstate** in SHA256 calculation in proof of work (POW) algorithm.
+
+<Image
+  src="/images/project-bitcoin-proof-of-work.png"
+  alt="Photo"
+  width={742}
+  height={350}
+  priority
+  className="next-image"
+/>
+
+Bitcoin POW relies on performing a SHA256 hash on the incoming data. 
+The **midstate** is the SHA-256 hashing state after hashing the first chunk (64) bytes of the block header. After you get a block header from the
+server, you typically hash the first chunk 1 time, and hash the second chunk 2^32 times going through all the possible nonce values.
+Because the nonce is in the second chunk, there is no need to hash the first chunk over and over every time you try a new nonce value.
