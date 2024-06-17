@@ -1,0 +1,236 @@
+---
+type: post
+title: Constructors, Dependency Injection & Testability
+tag: Software Engineering
+date: 2021-03-22
+---
+
+import Head from "next/head"
+
+<Head>
+  <title>Constructors, Dependency Injection & Testability</title>
+</Head>
+
+
+### What should a Constructor do?
+
+As a general rule, a constructor should have little, if any, logic in it at all. If you can manage it, a constructor should simply assign any parameters it receives to private fields or properties. 
+
+Constructors with initialization logic that may fail can cause exceptions to be thrown. Exceptions thrown from constructors can be challenging to debug. Separating the initialization code from the construction code is recommended and must be called separately.
+
+**Caveat/Clarification**: Depending on the situation, there is nothing wrong with a complex constructor or logic and loops. The issue is more about how the responsibilities are broken apart, how the code is easy to unit test, and how to make the code understandable and work as a caller would expect.
+
+### Warning Signs
+
+1. Constructor creating dependencies or collaborators (`new` keyword)
+2. Constructor takes a partially initialised object and has to set it up. 
+3. Violating the Law of Demeter in Constructor (accessing unnecessary objects like global state, flags from configuration or opening sockets etc).
+4. Control flow (control or looping logic) in the constructor.
+5. Creating unnecessary third-party objects in the constructor.
+
+### Why are these a problem?
+
+When your constructor has to instantiate and initialise its collaborators, the result tends to be an inflexible and prematurely coupled design. Such constructors shut off the ability to inject test doubles when unit testing.
+
+**It violates the Single Responsibility Principle & reduces reusability**
+
+When collaborator construction is combined with initialization, it implies only one way to configure the class. This limits the potential for reusability. Object graph creation is a distinct responsibility SEPARATE from the class's main purpose. Performing this work within a constructor violates the Single Responsibility Principle.
+
+> A constructor's job is to set up or initialize the class/object & not its collaborators.
+
+**Testing directly is difficult**
+
+To instantiate an object, the constructor must execute. And if that constructor does lots of work (creating new objects, configuration, accessing global state etc.), you are forced to do that work when creating the object in tests. Testing such constructors takes a lot of work. 
+
+When collaborators access external resources such as files, network services, or databases, even small changes in the collaborators may need to be included in the constructor. However, these changes might be overlooked due to inadequate test coverage from tests that were not written because the constructor is challenging to test. 
+
+**It forces dependencies/collaborators**
+
+Sometimes, when you test an object, you want to create only some of its collaborators. For instance, you want something other than a real MySqlRepository object that talks to the MySql service. However, if they are directly created inside your System Under Test (SUT), then you will be forced to use that heavyweight object.
+
+**Accessing global state can be problematic & testing is difficult**
+
+Accessing global state like directly reading flags is undesirable because global state is not isolated: previous tests could set it to a different value, or other threads could mutate it unexpectedly. You would also need to mock global state for your tests to run correctly.
+
+**Running tests is slow**
+
+Complex object graph construction, forcing expensive dependencies, and control logic can cause tests to run slowly. This might not be noticeable with a few tests, but running a few hundred can take a few minutes, which is painful.
+
+## Examples
+
+### 01 Using `new` operator directly in the constructor
+
+
+```
+class House {
+  Kitchen kitchen;
+  Bedroom bedroom;
+
+  House() {
+	kitchen = new Kitchen();
+    bedroom = new Bedroom();
+  }
+  // ...
+}
+```
+
+
+```
+// Hard to test
+class HouseTest extends TestCase {
+  public void testThisIsReallyHard() {
+    House house = new House();
+    // We are stuck with those Kitchen and
+    // Bedroom objects created in the
+    // constructor.
+
+    // ...
+  }
+}
+```
+
+## Suggestions
+
+_Do not create collaborators in your constructor, but pass them in_
+
+Move the responsibility for object graph construction and initialization to another object. (e.g., extract a builder, factory, or provider and pass these collaborators on to your constructor).
+
+Example: If you depend on a `DatabaseService` (hopefully that’s an interface), then use Dependency Injection (DI) to pass the exact subclass of the `DatabaseService' object you need to the constructor.
+
+To repeat: _Do not create collaborators in your constructor_, but pass them in. (Don’t look for things! Ask for things!)
+
+
+
+### Fix
+
+```
+class House {
+  Kitchen kitchen;
+  Bedroom bedroom;
+
+  // pass the dependencies
+  House(Kitchen k, Bedroom b) {
+    kitchen = k;
+    bedroom = b;
+  }
+  // ...
+}
+```
+
+```
+// easy tp test, with any
+// test-double objects as collaborators.
+
+class HouseTest extends TestCase {
+  public void testThisIsEasyAndFlexible() {
+    Kitchen dummyKitchen = new DummyKitchen();
+    Bedroom dummyBedroom = new DummyBedroom();
+
+    House house =
+      new House(dummyKitchen, dummyBedroom);
+
+    // Awesome, I can use test doubles that
+    // are lighter weight.
+
+    // ...
+  }
+}
+```
+
+### 02 Constructor takes a partially initialized object and has to set it up
+
+When configuration and instantiation is mixed together in the constructor, objects become more brittle and tied to concrete object graph structures. This makes code harder to modify, and (more or less) impossible to test.
+
+```
+class Payment {
+  PaymentProvider paymentProvider;
+
+  // pass the dependency but its not initialized
+  Payment(PaymentProvider paymentProvider) {
+	// get configuration from file, database, api, microservice etc (slow)
+	...
+    paymentProvider.configure(...);
+	this.paymentProvider = paymentProvider;
+  }
+  // ...
+}
+```
+
+- Flaw: The `Payment` needs a `PaymentProvider` but it should not be the responsibility of the `Payment` to configure the `PaymentProvider`. In most cases a class should only configure itself & not the dependencies.
+- Flaw: The configuration is tightly coupled. It can't be changed or modified without changing the constructor.
+- Flaw: In a unit test for `Payment` the `PaymentProvider` is set specifically in the constructor, thus forcing us to have pre-configured `PaymentProvider`. Forced dependencies like this can cause tests to run slow. In unit tests, you’ll want to pass in a FAKE `PaymentProvider` which runs much quicker.
+
+> Solution: pass all dependencies fully initialized or make use of a DI framework to initialize them
+
+### 03 Violating the Law of Demeter in Constructor
+
+> The **_Law of Demeter (LoD)_** or **_principle of least knowledge_** is a design guideline for developing software, particularly object-oriented programs  
+> — Wikipedia*
+
+The Demeter’s law is known as **don’t talk to strangers** because any method of  
+an object only can call to methods of:
+
+1. Each unit should have only limited knowledge about other units: only units “closely” related to the current unit.
+2. Each unit should only talk to its friends; _don’t talk to strangers_.
+3. Only talk to your immediate friends.
+
+```
+// Violates the Law of Demeter
+// Mixes object lookup with assignment
+
+class AccountView {
+  IUser user;
+  AccountView(Guid userId) { 
+   this.user = globalState.getUser(userId);
+   or
+   this.user = authMicroservice.getUser(userId);
+  }
+}
+```
+
+The test
+
+```
+// Hard to test because needs real globalState or authMicroservice
+class ACcountViewTest extends TestCase {
+
+  public void testWithRealMicroservice() {
+    AccountView view = new AccountView(...);
+    // Yikes! We just had to connect to a real
+    // microservice. This test is now slow.
+
+    // ...
+  }
+}
+```
+
+Connecting to a real microservice can slow down the unit test. A test suite with many unit tests like this can defeat the purpose of unit tests altogether. Unit tests are supposed to run quickly, in contrast to integration tests, which may be slower.
+
+```
+// pass the collaborator instead looking for it
+class AccountView {
+  IUser user;
+  AccountView(IUser user) { 
+   this.user = user;
+  }
+}
+```
+
+The test
+
+```
+class ACcountViewTest extends TestCase {
+
+  public void testWithMockMicroservice() {
+		// use a fake user or connect to a fake/mock microservice to fetch the user
+		// both options are easy to implement & fast
+		User user = new DummyUser();
+		// or
+		User user = fakeAuthMicroservice.getUser();
+    AccountView view = new AccountView(user);
+  }
+}
+
+
+
+
