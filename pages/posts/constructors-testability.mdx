@@ -22,9 +22,11 @@ Constructors with initialization logic that may fail can cause exceptions to be 
 
 ### Warning Signs
 
+If you encounter the following, ihe important thing is that you think about your design and your choices.
+
 1. Constructor creating dependencies or collaborators (`new` keyword)
 2. Constructor takes a partially initialised object and has to set it up. 
-3. Violating the Law of Demeter in Constructor (accessing unnecessary objects like global state, flags from configuration or opening sockets etc).
+3. Violating the Law of Demeter in Constructor (accessing unnecessary objects like global state, flags from configuration or opening sockets/files etc).
 4. Control flow (control or looping logic) in the constructor.
 5. Creating unnecessary third-party objects in the constructor.
 
@@ -91,7 +93,7 @@ class HouseTest extends TestCase {
 
 ## Suggestions
 
-_Do not create collaborators in your constructor, but pass them in_
+> Do not create collaborators in your constructor, but pass them in
 
 Move the responsibility for object graph construction and initialization to another object. (e.g., extract a builder, factory, or provider and pass these collaborators on to your constructor).
 
@@ -118,7 +120,7 @@ class House {
 ```
 
 ```
-// easy tp test, with any
+// easy to test, with any
 // test-double objects as collaborators.
 
 class HouseTest extends TestCase {
@@ -188,11 +190,11 @@ class AccountView {
 }
 ```
 
-The test
+The test, slow & flaky
 
 ```
 // Hard to test because needs real globalState or authMicroservice
-class ACcountViewTest extends TestCase {
+class AccountViewTest extends TestCase {
 
   public void testWithRealMicroservice() {
     AccountView view = new AccountView(...);
@@ -216,7 +218,7 @@ class AccountView {
 }
 ```
 
-The test
+The test, fast & consistent
 
 ```
 class ACcountViewTest extends TestCase {

@@ -1,0 +1,31 @@
+---
+type: post
+title: Monolith Vs Microservices
+date: 2024-04-07
+---
+
+import Head from "next/head"
+
+<Head>
+  <title>Monolith Vs Microservices</title>
+</Head>
+
+
+
+Microservices is a pattern that is about organizational structure much more than it is about how to organize your code or performance.
+
+> The scalability argument: we'll have to scale one day; why not now? 
+
+Because you will have a much larger team and resources on that day, switching to microservices will be much more practical. Microservices work well if you have huge teams and need to break up the work so each team can handle a piece of the app. But sticking with a monolith is usually much easier if your team is smaller—say, 10, 20, or even up to 50 developers. With a monolith, everything runs on the same computer, so you don't have to deal with the complexity of network calls to get basic functions working. This makes debugging easier and allows everyone to understand how the whole system works.
+
+There have been considerable improvements regarding processor and disk performance in the last two decades, while programming languages have become more efficient. Even full-stack frameworks written in dynamic languages, like Django, Laravel, or Rails, can handle thousands of requests per second on a moderately sized server. Therefore, unless you're really sure your application cannot vertically scale enough, the argument for microservices is not really valid.
+
+The only valid reason to split your codebase into microservices and pay the performance penalty & additional complexity caused by inter-service communication (replacing all your method calls with network calls) is that you can map those pieces of code to a distinct business domain. 
+
+That's what all the books on the topic recommend ("Software Architecture: The Hard Parts", "Monolith to Microservices", "Microservice Patterns", "Building Event-Driven Microservices", "Strategic Monoliths and Microservices" etc) and not applying this principle generally creates a -
+
+> Distributed Monolith, which has all the coupling of a monolith and all the drawbacks of a microservice.
+
+When you look at your product's service-oriented architecture, and that becomes too big for a team to handle the complexity, that's when you should be looking at your domains and finding the right separation. It's a "domain service that you're separating so you can have a better developer experience and can be supported by multiple teams working on the same codebase.  
+
+Microservices came from companies like Google, Netflix, Amazon, etc., which have hundreds of developers and needed a way to manage that scale. Using those ideas in a smaller company often just makes things more complicated than they need to be.
